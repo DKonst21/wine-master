@@ -5,13 +5,12 @@ import argparse
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from collections import defaultdict
-from pathlib import Path
 
 
 def get_correct_year_name(winery_age):
     last_two_digit = winery_age % 100
     last_digit = winery_age % 10
-    if last_two_digit == 1 and last_two_digit != 11:
+    if last_digit == 1 and last_two_digit != 11:
         return 'год'
     elif last_digit in [2, 3, 4] and last_two_digit not in [12, 13, 14]:
         return 'года'
@@ -26,22 +25,21 @@ def get_winery_age(year_of_create):
     return winery_age
 
 
-def get_wine_catalog(wine_catalog):
-    wines = pandas.read_excel(
-        wine_catalog,
-        keep_default_na=False
-    ).to_dict(orient='records')
-    wine_catalog = defaultdict(list)
+def get_wine_catalog(wine_cards_filepath):
+    excel_data_df = pandas.read_excel(wine_cards_filepath, sheet_name='Лист1', na_values='nan', keep_default_na=False)
+    wines = excel_data_df.to_dict(orient='records')
+    grouped_wine_cards = defaultdict(list)
     for wine in wines:
-        wine_catalog[wine['Категория']].append(wine)
-    return wine_catalog
+        grouped_wine_cards[wine['Категория']].append(wine)
+    return grouped_wine_cards
 
 
 def get_dir_path():
     parser = argparse.ArgumentParser(description='Запуск Сайта-магазина')
-    parser.add_argument('-d', '--dir', default='.', help='Папка с Excel файлом (по умолчанию корневая)')
+    parser.add_argument('-d', '--dir', help='Укажите путь к файлу с продукцией, по умолчанию wine_catalog.xlsx',
+                        default='wine_catalog.xlsx')
     args = parser.parse_args()
-    return f'{Path().cwd().joinpath(args.dir).joinpath("wine_catalog.xlsx")}'
+    return args.dir
 
 
 if __name__ == '__main__':
